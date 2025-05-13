@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}"/>
+    <link rel="icon" th:href="@{/images/favicon.ico}" type="image/x-icon">
+    <title>Изохорный процесс</title>
+</head>
+<body>
+
+<h1 class="title">Изучение изохорного процесса в газах</h1>
+<section id="thermometer" class="section">
+    <div class="temperature">
+        <img src="/images/termometr1000.png" class ="thermometer-image"/>
+        <img src="/images/redspirt.png" class="redspirt-image">
+    </div>
+</section>
+
+<!-- Параметры -->
+<section id="parameters" class="section1">
+    <div class="params">
+        <h2>Начальные параметры</h2>
+        <div class="form-group">
+            <label for="pressure">Давление (P):</label>
+            <input type="number" id="pressure" name="pressure" value="100" step="10"/> кПа
+        </div>
+        <div class="form-group">
+            <label for="temperature">Температура (T):</label>
+            <input type="number" id="temperature" name="temperature" value="20" step="1"/> C&deg
+        </div>
+        <div class="form-group">
+            <label for="volume">Объем (V):</label>
+            <input type="number" id="volume" name="volume" value="1" step="0.01"/> л
+        </div>
+        <div class="form-group">
+            <label for="massSubstance">Масса вещества (m):</label>
+            <input type="number" id="massSubstance" name="massSubstance" value="0.001" step="0.001"/> кг
+        </div>
+        <div class="form-group">
+            <label for="molarMass">Молярная масса (M):</label>
+            <input type="number" id="molarMass" name="molarMass" value="0.029" step="0.001"/> кг/моль
+        </div>
+        <div class="form-group">
+            <label for="simTime">Время симуляции (c):</label>
+            <input type="number" id="simTime" name="simTime" value="10" step="0.1"/> c
+        </div>
+        <p>Нагрев происходит со скоростью 1 C&deg/сек</p>
+        <button type="submit" id="submitButton">Рассчитать</button>
+        <h2>
+            Итоговые параметры газа
+        </h2>
+        <div class="form-group">
+            <label for="CurrTemperature">Температура (t<sub>i</sub>):</label>
+            <input type="text" class ="spinner" readonly="" id="CurrTemperature"/> C&deg
+        </div>
+        <div class="form-group">
+            <label for="CurrPressure">Давление (p<sub>i</sub>):</label>
+            <input type="text" class ="spinner" readonly="" id="CurrPressure"/> кПа
+        </div>
+        <div class="form-group">
+            <label for="CurrVolume">Объем (V<sub>i</sub>):</label>
+            <input type="text" class ="spinner" readonly="" id="CurrVolume"/> л
+        </div>
+    </div>
+</section>
+
+<section id ="manometer" class ="section2">
+    <div class="pressure">
+        <img src ="/images/manometr.png" class ="manometer-image">
+    </div>
+</section>
+
+<section id ="arrow" class ="section3">
+    <div class="png">
+        <img src ="/images/arrow-dynamometer.png" class ="arrow-image" id="arrow-dynamometer">
+    </div>
+</section>
+
+<section id ="table" class ="section4">
+    <div class="png">
+        <img src ="/images/table.png" class ="table-image">
+    </div>
+</section>
+
+<section id ="wire" class ="section5">
+    <div class="png">
+        <img src ="/images/provod.png" class ="wire-image">
+    </div>
+</section>
+
+<section id ="sosud" class ="section6">
+    <div class="png">
+        <img src ="/images/sosud6lg.png" class ="sosud-image">
+        <img src ="/images/water.png" class ="oxygen-image">
+    </div>
+</section>
+
+<section id ="fireAnimation" class ="section7">
+    <div class="png">
+        <img src ="/images/fire-anim/fire101.png" class ="fire-image" id = "fire-image">
+    </div>
+</section>
+
+<script>
+    document.getElementById('submitButton').addEventListener('click', function() {
+    const fireAnimation = document.getElementById('fire-image');
+    const totalFrames = 8;
+    let currentFrame = 1;
+
+    fireAnimation.style.display = 'block';
+
+    const formData = new FormData();
+    formData.append('pressure', document.getElementById('pressure').value);
+    formData.append('temperature', document.getElementById('temperature').value);
+    formData.append('volume', document.getElementById('volume').value);
+    formData.append('massSubstance', document.getElementById('massSubstance').value);
+    formData.append('molarMass', document.getElementById('molarMass').value);
+    formData.append('simTime', document.getElementById('simTime').value);
+
+    const animationInterval = setInterval(() => {
+    currentFrame = (currentFrame % totalFrames) + 1;
+    fireAnimation.src = `/images/fire-anim/fire10${currentFrame}.png`;
+    }, 100);
+
+    fetch('/', {
+    method: 'POST',
+    body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+    let oxy_width = 12 + parseInt(document.getElementById('volume').value * 65) || 0;
+    document.documentElement.style.setProperty('--oxygen-wight', `${oxy_width}px`);
+
+    fireAnimation.style.display = 'block';
+    fireAnimation.style.opacity = '1';
+    setTimeout(() => {
+        clearInterval(animationInterval);
+        fireAnimation.style.display = 'none';
+
+        document.getElementById('CurrPressure').value = data.gasPressure;
+        document.getElementById('CurrTemperature').value = data.gasTemp;
+        document.getElementById('CurrVolume').value = document.getElementById('volume').value;
+        let rortat = 90 + parseInt(data.gasPressure * 0.235) || 0;
+
+        let arrow = document.getElementById('arrow-dynamometer');
+        arrow.style.transition = 'transform 2s ease';
+        arrow.style.transform = `translate(500px, -2040px) scale(0.55) rotate(${rortat}deg)`;
+
+        let redspirt = document.querySelector('.redspirt-image');
+        let minTemp = -200;
+        let maxTemp = 1000;
+        let minScale = 25;
+        let maxScale = 335  ;
+
+        let t = parseFloat(data.gasTemp);
+        if (isNaN(t)) t = 0;
+        let clampedT = Math.max(minTemp, Math.min(maxTemp, t));
+        let scale = minScale + ((clampedT - minTemp) / (maxTemp - minTemp)) * (maxScale - minScale);
+        console.log(scale);
+        redspirt.style.height = `${scale}px`;
+    }, 3000);
+    })
+    .catch((error) => {
+        clearInterval(animationInterval);
+        fireAnimation.style.display = 'none';
+        fireAnimation.style.opacity = '0';
+        console.error('Ошибка:', error);
+    });
+    });
+</script>
+</body>
+</html>
